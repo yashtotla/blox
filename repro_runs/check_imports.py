@@ -38,6 +38,8 @@ keep = [n for n in tree.body
         # simple constants the sys.path lines use, e.g. REPO = os.path.dirname(...)
         or (isinstance(n, ast.Assign) and {t.id for t in n.targets if isinstance(t, ast.Name)} & used)]
 code = compile(ast.Module(body=ast.parse("import sys, os").body + keep, type_ignores=[]), path, "exec")
+if not package:
+    sys.path.insert(0, os.path.dirname(path))  # as `python path/to/script.py` does
 status = "OK"
 try:
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
