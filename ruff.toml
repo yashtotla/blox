@@ -1,0 +1,18 @@
+# Without a config, Ruff's defaults flag nearly every import block in this
+# repo (sorting, unused imports, modernization nags on research code).
+
+# Vendored Synergy model-training code; needs torch/apex/DALI and is never
+# imported by the simulator. force-exclude makes the editor skip it too.
+extend-exclude = ["workload_synergy"]
+force-exclude = true
+
+[lint]
+ignore = [
+    "I001",    # unsorted imports
+    "F401",    # unused imports
+    "PLR0402", # `import a.b as b` -> `from a import b`
+    "PLC0414", # `import x as x`
+    "UP035",   # deprecated typing imports (List, Dict, ...)
+    "UP010",   # unneeded `from __future__ import ...`
+    "UP029",   # unneeded `from builtins import ...`
+]
