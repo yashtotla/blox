@@ -66,7 +66,7 @@ def main(args):
             if args.placement_name == "Place":
                 placement_policy = placement.JobPlacement(args)
             else:
-                raise NotImplemented(
+                raise NotImplementedError(
                     f"Placement Policy {args.placement_policy} not Implemented"
                 )
 
@@ -76,7 +76,7 @@ def main(args):
             elif args.acceptance_policy == "LoadBasedAccept":
                 admission_policy = admission_control.loadBasedAccept(args)
             else:
-                raise NotImplemented(f"{args.acceptance_policy} not Implemented")
+                raise NotImplementedError(f"{args.acceptance_policy} not Implemented")
 
             if args.scheduler_name == "Las":
                 scheduling_policy = schedulers.Las(args)
@@ -86,7 +86,7 @@ def main(args):
             elif args.scheduler_name == "Srtf":
                 scheduling_policy = schedulers.Srtf(args)
             else:
-                raise NotImplemented(f"{args.scheduler_name} not Implemented")
+                raise NotImplementedError(f"{args.scheduler_name} not Implemented")
 
             simulator_time = 0
             round_number = 0
@@ -159,7 +159,7 @@ def main(args):
                     if min_placement_policy == "Place":
                         placement_policy = placement.JobPlacement(args)
                     else:
-                        raise NotImplemented(
+                        raise NotImplementedError(
                             f"Placement Policy {args.placement_policy} not Implemented"
                         )
 
@@ -171,7 +171,7 @@ def main(args):
                     elif min_admission_policy == "Load Based, 1.2x":
                         admission_policy = admission_control.loadBasedAccept(args, 1.2)
                     else:
-                        raise NotImplemented(
+                        raise NotImplementedError(
                             f"{args.acceptance_policy} not Implemented"
                         )
 
@@ -182,7 +182,7 @@ def main(args):
                     elif min_scheduler == "Srtf":
                         scheduling_policy = schedulers.Srtf(args)
                     else:
-                        raise NotImplemented(f"{args.scheduler_name} not Implemented")
+                        raise NotImplementedError(f"{args.scheduler_name} not Implemented")
 
                     admission_policy.simulator_time = simulator_time
                     scheduling_policy.simulator_time = simulator_time

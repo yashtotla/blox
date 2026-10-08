@@ -1,6 +1,8 @@
 # handles node data, like per iteration time lease etc
 import sys
+import json
 import redis
+from typing import List
 
 
 class DataRelay(object):
@@ -245,8 +247,10 @@ class DataRelay(object):
                 try:
                     redis_pipe.watch(metric_key)
                     previous_metrics = redis_pipe.hgetall(metric_key)
-                    for key_metric in data:
-                        data[key_metric] = self.data_type[key_metric](data[key_metric])
+                    for key_metric in previous_metrics:
+                        previous_metrics[key_metric] = self.data_type[key_metric](
+                            previous_metrics[key_metric]
+                        )
                     redis_pipe.multi()
                     for key in metrics:
                         if key == "per_iter_time":

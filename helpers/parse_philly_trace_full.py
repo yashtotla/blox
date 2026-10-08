@@ -186,4 +186,4 @@ if __name__ == "__main__":
   if len(args) != 2:
     print("Usage: ./parse_philly_jobs.py [path_to_job_trace]")
     sys.exit(1)
-  parse_jobs(args[1])
+  parse_jobs_full(args[1])

@@ -1,4 +1,4 @@
-import os
+import json
 from models import *
 
 # from models import ModelStats, alexnet_1
@@ -65,9 +65,9 @@ class Model:
 
         try:
             with open(fname) as json_file:
-                score_to_update = json.load(json_file)
-        except:
-            raise ("Could not parse synergy profile")
+                score_to_update.update(json.load(json_file))
+        except (OSError, ValueError) as e:
+            raise ValueError("Could not parse synergy profile") from e
 
     """
     Fair share scores for * GPU-24CPU-500GB-500MB/s

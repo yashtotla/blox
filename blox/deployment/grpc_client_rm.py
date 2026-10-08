@@ -191,7 +191,7 @@ class ResourceManagerComm(object):
             if not if_sim:
                 # added tracking
                 previous_metric = active_job_dict[job_id]["tracked_metrics"]
-                metric_data_dict[job_id] = previous_metrics
+                metric_data_dict[job_id] = previous_metric
                 for ipaddr in ipaddr_to_query:
                     ipaddr = f"{ipaddr}:{self.rpc_port}"
                     metric_request = rm_pb2.JsonResponse()

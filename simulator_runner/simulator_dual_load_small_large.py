@@ -296,7 +296,7 @@ class SimulatorRunner(simulator_pb2_grpc.SimServerServicer):
                 fig, ax1 = plt.subplots(1, 1)
                 fig.set_size_inches(10, 3)
                 ax1.set_title(f"{scheduler}_load_{load}_free_GPUs")
-                ax1.plot(data_job.keys(), free_gpu)
+                ax1.plot(data_job.keys(), free_gpus)
                 plt.savefig(
                     os.path.join(write_folder, f"{scheduler}_load_{load}_free_gpu.pdf"),
                     format="pdf",
