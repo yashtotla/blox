@@ -11,7 +11,6 @@ usage:
   python repro_runs/check_imports.py          # compare against baseline
 """
 
-import ast
 import json
 import os
 import subprocess
@@ -77,7 +76,7 @@ def check(rel):
                PYTHONDONTWRITEBYTECODE="1")
     out = subprocess.run(
         [sys.executable, "-c", CHILD, REPO, os.path.join(REPO, rel), package_of(rel)],
-        cwd=REPO, env=env, capture_output=True, text=True,
+        cwd=REPO, env=env, capture_output=True, text=True, check=False,
     )
     try:
         return rel, json.loads(out.stdout.strip().splitlines()[-1])

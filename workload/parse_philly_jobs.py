@@ -5,7 +5,6 @@ import json
 import sys
 import math
 
-import numpy as np
 
 from job import Job
 from utils import get_gavel_like_iter, small_trace_dur

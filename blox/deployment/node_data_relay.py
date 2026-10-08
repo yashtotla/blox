@@ -1,5 +1,4 @@
 # handles node data, like per iteration time lease etc
-import sys
 import json
 import redis
 from typing import List

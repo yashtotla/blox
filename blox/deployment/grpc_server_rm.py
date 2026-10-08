@@ -6,10 +6,9 @@ import json
 import grpc
 import copy
 import logging
-import pandas as pd
 from concurrent import futures
 
-from typing import Tuple, List
+from typing import List
 
 # sys.path.append(os.path.join(os.path.dirname(__file__), "grpc_stubs"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "grpc_stubs"))
@@ -17,7 +16,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "grpc_stubs"))
 print(sys.path)
 import rm_pb2 as rm_pb2
 import rm_pb2_grpc as rm_pb2_grpc
-import simulator_pb2 as sim_pb2
 import simulator_pb2_grpc as sim_pb2_grpc
 
 from google.protobuf.json_format import MessageToDict

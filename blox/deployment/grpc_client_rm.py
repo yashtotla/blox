@@ -2,19 +2,14 @@ import os
 import sys
 import json
 import grpc
-import logging
 from typing import List
-from concurrent import futures
 from collections import defaultdict
 
 sys.path.append(os.path.join((__file__), "./grpc_stubs"))
-import nm_pb2
 import nm_pb2_grpc
 
 import rm_pb2
 
-import simulator_pb2
-import simulator_pb2_grpc
 
 
 class ResourceManagerComm(object):

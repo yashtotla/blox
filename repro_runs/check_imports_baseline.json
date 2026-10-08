@@ -348,10 +348,6 @@
   ],
   "status": "OK"
  },
- "blox_examples/las_scheduler_wait_q.py": {
-  "loaded": [],
-  "status": "ModuleNotFoundError: No module named 'scheduling_policy'"
- },
  "command_launch_file.py": {
   "loaded": [],
   "status": "OK"
@@ -382,130 +378,8 @@
   "loaded": [],
   "status": "OK"
  },
- "jobs/model.py": {
-  "loaded": [
-   "models/__init__.py",
-   "models/alexnet_1.py",
-   "models/alexnet_2.py",
-   "models/alexnet_4.py",
-   "models/bert_1.py",
-   "models/deepspeech_1.py",
-   "models/deepspeech_2.py",
-   "models/deepspeech_4.py",
-   "models/gnmt_1.py",
-   "models/gnmt_2.py",
-   "models/gnmt_4.py",
-   "models/lstm_1.py",
-   "models/lstm_2.py",
-   "models/lstm_4.py",
-   "models/m5_1.py",
-   "models/mobilenet_1.py",
-   "models/mobilenet_2.py",
-   "models/mobilenet_4.py",
-   "models/model_stats.py",
-   "models/res18_1.py",
-   "models/res18_2.py",
-   "models/res18_4.py",
-   "models/res50_1.py",
-   "models/res50_2.py",
-   "models/res50_4.py",
-   "models/shufflenet_1.py",
-   "models/shufflenet_12.py",
-   "models/shufflenet_2.py",
-   "models/shufflenet_4.py",
-   "models/transformer_1.py",
-   "models/transformer_2.py",
-   "models/transformer_4.py",
-   "models/vae_1.py"
-  ],
-  "status": "OK"
- },
- "jobs/model_zoo.py": {
-  "loaded": [
-   "jobs/model.py",
-   "jobs/task.py",
-   "models/__init__.py",
-   "models/alexnet_1.py",
-   "models/alexnet_2.py",
-   "models/alexnet_4.py",
-   "models/bert_1.py",
-   "models/deepspeech_1.py",
-   "models/deepspeech_2.py",
-   "models/deepspeech_4.py",
-   "models/gnmt_1.py",
-   "models/gnmt_2.py",
-   "models/gnmt_4.py",
-   "models/lstm_1.py",
-   "models/lstm_2.py",
-   "models/lstm_4.py",
-   "models/m5_1.py",
-   "models/mobilenet_1.py",
-   "models/mobilenet_2.py",
-   "models/mobilenet_4.py",
-   "models/model_stats.py",
-   "models/res18_1.py",
-   "models/res18_2.py",
-   "models/res18_4.py",
-   "models/res50_1.py",
-   "models/res50_2.py",
-   "models/res50_4.py",
-   "models/shufflenet_1.py",
-   "models/shufflenet_12.py",
-   "models/shufflenet_2.py",
-   "models/shufflenet_4.py",
-   "models/transformer_1.py",
-   "models/transformer_2.py",
-   "models/transformer_4.py",
-   "models/vae_1.py"
-  ],
-  "status": "OK"
- },
  "jobs/task.py": {
   "loaded": [],
-  "status": "OK"
- },
- "jobs/workload.py": {
-  "loaded": [
-   "helpers/parse_philly_trace_full.py",
-   "helpers/utils.py",
-   "jobs/job.py",
-   "jobs/model.py",
-   "jobs/model_zoo.py",
-   "jobs/task.py",
-   "models/__init__.py",
-   "models/alexnet_1.py",
-   "models/alexnet_2.py",
-   "models/alexnet_4.py",
-   "models/bert_1.py",
-   "models/deepspeech_1.py",
-   "models/deepspeech_2.py",
-   "models/deepspeech_4.py",
-   "models/gnmt_1.py",
-   "models/gnmt_2.py",
-   "models/gnmt_4.py",
-   "models/lstm_1.py",
-   "models/lstm_2.py",
-   "models/lstm_4.py",
-   "models/m5_1.py",
-   "models/mobilenet_1.py",
-   "models/mobilenet_2.py",
-   "models/mobilenet_4.py",
-   "models/model_stats.py",
-   "models/res18_1.py",
-   "models/res18_2.py",
-   "models/res18_4.py",
-   "models/res50_1.py",
-   "models/res50_2.py",
-   "models/res50_4.py",
-   "models/shufflenet_1.py",
-   "models/shufflenet_12.py",
-   "models/shufflenet_2.py",
-   "models/shufflenet_4.py",
-   "models/transformer_1.py",
-   "models/transformer_2.py",
-   "models/transformer_4.py",
-   "models/vae_1.py"
-  ],
   "status": "OK"
  },
  "las_scheduler.py": {
@@ -1868,39 +1742,6 @@
   ],
   "status": "OK"
  },
- "placement/bebop.py": {
-  "loaded": [
-   "placement/__init__.py",
-   "placement/placement.py",
-   "placement/placement_inference.py"
-  ],
-  "status": "OK"
- },
- "placement/consolidated.py": {
-  "loaded": [
-   "placement/__init__.py",
-   "placement/placement.py",
-   "placement/placement_inference.py"
-  ],
-  "status": "OK"
- },
- "placement/consolidated_placement.py": {
-  "loaded": [
-   "placement/__init__.py",
-   "placement/placement.py",
-   "placement/placement_inference.py",
-   "placement/placement_policy.py"
-  ],
-  "status": "ModuleNotFoundError: No module named 'utils'"
- },
- "placement/first-gpu.py": {
-  "loaded": [
-   "placement/__init__.py",
-   "placement/placement.py",
-   "placement/placement_inference.py"
-  ],
-  "status": "OK"
- },
  "placement/placement.py": {
   "loaded": [],
   "status": "OK"
@@ -1910,14 +1751,6 @@
   "status": "OK"
  },
  "placement/placement_policy.py": {
-  "loaded": [],
-  "status": "OK"
- },
- "placement/synergy_placement.py": {
-  "loaded": [],
-  "status": "SyntaxError: line 53"
- },
- "placement/utils.py": {
   "loaded": [],
   "status": "OK"
  },
@@ -2014,18 +1847,6 @@
   ],
   "status": "OK"
  },
- "schedulers/gavel.py": {
-  "loaded": [
-   "schedulers/__init__.py",
-   "schedulers/fifo.py",
-   "schedulers/las.py",
-   "schedulers/optimus.py",
-   "schedulers/scheduler_policy.py",
-   "schedulers/srtf.py",
-   "schedulers/tiresias.py"
-  ],
-  "status": "ModuleNotFoundError: No module named 'policy'"
- },
  "schedulers/las.py": {
   "loaded": [
    "schedulers/__init__.py",
@@ -2047,14 +1868,6 @@
    "schedulers/tiresias.py"
   ],
   "status": "OK"
- },
- "schedulers/policy.py": {
-  "loaded": [],
-  "status": "ModuleNotFoundError: No module named 'cvxpy'"
- },
- "schedulers/proportional.py": {
-  "loaded": [],
-  "status": "ModuleNotFoundError: No module named 'cvxpy'"
  },
  "schedulers/scheduler_policy.py": {
   "loaded": [],
@@ -2461,10 +2274,6 @@
    "workload/workload.py"
   ],
   "status": "OK"
- },
- "srtf_scheduler.py": {
-  "loaded": [],
-  "status": "ModuleNotFoundError: No module named 'scheduling_policy'"
  },
  "workload/__init__.py": {
   "loaded": [

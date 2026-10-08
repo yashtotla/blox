@@ -1,6 +1,5 @@
 import pandas as pd
 import copy
-from typing import Tuple, List
 
 
 class JobPlacement(object):

@@ -1,6 +1,5 @@
 import math
 import random
-import numpy as np
 #from resources.server_config import Res
 
 def poisson_next_arrival_time(jobs_per_hour):

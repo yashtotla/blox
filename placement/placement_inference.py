@@ -1,6 +1,5 @@
-import pandas as pd
 
-from typing import Tuple, List
+from typing import List
 
 
 class JobPlacementInference(object):

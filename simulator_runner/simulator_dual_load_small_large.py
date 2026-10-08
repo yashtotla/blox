@@ -8,11 +8,9 @@ import numpy as np
 
 from workload import Workload
 from concurrent import futures
-from typing import Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.lines as lines
 from collections import defaultdict
 
 # something in pylab * screws up with random library, for now just overwriting
@@ -21,7 +19,6 @@ import random
 sys.path.append(os.path.join(os.path.dirname(__file__), "./deployment/grpc_stubs"))
 from blox.deployment.grpc_stubs import rm_pb2
 from blox.deployment.grpc_stubs import rm_pb2_grpc
-from blox.deployment.grpc_stubs import simulator_pb2
 from blox.deployment.grpc_stubs import simulator_pb2_grpc
 import traceback
 

@@ -1,6 +1,5 @@
 from .scheduler_policy import SchedulingPolicy
 import pandas as pd
-from operator import getitem
 import os
 from typing import Optional
 
