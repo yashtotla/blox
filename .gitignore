@@ -11,3 +11,5 @@ __pycache__/
 
 graveyard/
 
+*.err
+*.log
