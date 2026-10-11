@@ -175,6 +175,7 @@ done; done
 .venv/bin/python repro_runs/summarize_fig6.py fig6          # table + the paper's ordering checks
 .venv/bin/python repro_runs/compare_fig6_paper.py fig6      # paper vs your run vs offline model, per-job agreement
 .venv/bin/python repro_runs/plot_fig6.py fig6               # -> repro_runs/fig6/fig6_fig7.png
+.venv/bin/python repro_runs/plot_fig6.py fig6 --no-paper    # our curves only -> repro_runs/fig6/fig6_fig7_local.png
 ```
 
 Rounds per config (the simulation stops once job 4000 has finished) and wall

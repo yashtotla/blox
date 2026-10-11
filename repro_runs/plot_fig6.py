@@ -4,7 +4,8 @@ Optimus: the paper's points, read from the PDF's vector markers, over our
 curves (Blox output of run_fig6.sh where finished, offline model otherwise;
 a scheduler with neither is left out of the "this repo" lines).
 
-usage: plot_fig6.py [exp_prefix=fig6] [out=repro_runs/<exp_prefix>/fig6_fig7.png]
+usage: plot_fig6.py [exp_prefix=fig6] [out=repro_runs/<exp_prefix>/fig6_fig7.png] [--no-paper]
+       --no-paper draws only our curves (default out: fig6_fig7_local.png)
 """
 import json
 import os
@@ -17,8 +18,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PREFIX = sys.argv[1] if len(sys.argv) > 1 else "fig6"
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, PREFIX, "fig6_fig7.png")
+NO_PAPER = "--no-paper" in sys.argv  # our curves only, no paper overlay
+argv = [a for a in sys.argv[1:] if a != "--no-paper"]
+PREFIX = argv[0] if len(argv) > 0 else "fig6"
+OUT = argv[1] if len(argv) > 1 else os.path.join(
+    HERE, PREFIX, "fig6_fig7_local.png" if NO_PAPER else "fig6_fig7.png")
 OFF = os.path.join(HERE, "fig6_offline")
 START, END = 3000, 4000
 LOADS = list(range(1, 10))
@@ -48,12 +52,14 @@ def ours(s, lo, kind):
     return (statistics.mean(b.values()) if b else None), src
 
 
-with open(os.path.join(HERE, "paper_fig6_fig7_points.json")) as f:
-    raw = json.load(f)
-paper = {
-    (fig, s): {round(x): y for x, y in pts if abs(x - round(x)) < 0.1 and 1 <= round(x) <= 9}
-    for fig, series in raw.items() for s, pts in series.items()
-}
+paper = {}
+if not NO_PAPER:
+    with open(os.path.join(HERE, "paper_fig6_fig7_points.json")) as f:
+        raw = json.load(f)
+    paper = {
+        (fig, s): {round(x): y for x, y in pts if abs(x - round(x)) < 0.1 and 1 <= round(x) <= 9}
+        for fig, series in raw.items() for s, pts in series.items()
+    }
 
 plt.rcParams.update({
     "font.size": 10, "text.color": INK, "axes.labelcolor": INK2,
@@ -68,9 +74,11 @@ for ax, kind in zip(axes, FIG):
         if have:
             offline_used |= any(src == "offline" for _, _, src in have)
             ax.plot([lo for lo, _, _ in have], [y / 3600 for _, y, _ in have], color=COLOR[s],
-                    lw=2, marker="o", ms=6, label=f"{NAME[s]}, this repo")
+                    lw=2, marker="o", ms=6, label=NAME[s] if NO_PAPER else f"{NAME[s]}, this repo")
         else:
             print(f"  no data for {s} ({kind}): neither {PREFIX}/ nor fig6_offline/ has it")
+        if NO_PAPER:
+            continue
         px = sorted(paper[(FIG[kind], s)])
         ax.plot(px, [paper[(FIG[kind], s)][x] / 3600 for x in px], color=COLOR[s], lw=0,
                 marker="o", ms=11, mfc="none", mew=1.6,
@@ -84,7 +92,8 @@ for ax, kind in zip(axes, FIG):
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     ax.legend(frameon=False, fontsize=8.5, loc="upper left")
-note = "Hollow circles: points read from the paper's PDF. Filled: the shipped Blox code, jobs 3000-4000 tracked"
+note = (f"Blox code in this repo, run '{PREFIX}', jobs 3000-4000 tracked" if NO_PAPER else
+        "Hollow circles: points read from the paper's PDF. Filled: the shipped Blox code, jobs 3000-4000 tracked")
 note += ", offline model where Blox had not finished." if offline_used else "."
 fig.text(0.01, 0.005, note, color=INK2, fontsize=8)
 fig.tight_layout(rect=(0, 0.04, 1, 1))
