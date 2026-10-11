@@ -1,18 +1,22 @@
-# Reproducing Figures 6 and 7 of Blox: FIFO vs Tiresias
+# Reproducing Figures 6 and 7 of Blox: FIFO, Tiresias and Optimus
 
 Blox (Agarwal, Phanishayee, Venkataraman, EuroSys '24) compares FIFO, Tiresias
 and Optimus on the "Philly trace" at 1 to 9 jobs per hour on 128 GPUs, plotting
 average JCT (Figure 6) and average responsiveness (Figure 7). This folder
-reproduces the FIFO and Tiresias curves with the code as shipped in this repo,
-checks the shipped code against an independent re-simulation job by job, and
-compares both with the data points read out of the paper's PDF.
+reproduces all three curves with the code in this repo (FIFO and Tiresias as
+shipped, Optimus after restoring twelve lines the authors commented out after
+the paper, section 2), checks the code against an independent re-simulation
+job by job, and compares both with the data points read out of the paper's PDF.
 
-**Result (2026-10-11):** the shipped code reproduces both curves at every load
-to within one scheduling round (300 s); the Blox output and the independent
-re-simulation agree on all 1001 tracked jobs in all 18 configs; and the paper's
-Optimus curve turns out to be a hardcoded per-load speed table, not a scheduler
-effect. Nothing from our run is committed; the exact numbers are in section 6,
-so you can check that your own run lands on the same values.
+**Result (2026-10-11, FIFO and Tiresias):** the shipped code reproduces both
+curves at every load to within one scheduling round (300 s), and the Blox
+output and the independent re-simulation agree on all 1001 tracked jobs in all
+18 configs. The paper's Optimus curve below 6 jobs/hour is a hardcoded per-load
+speed table, not a scheduler effect (section 2); above 7 it is the
+shortest-remaining-time ordering. The Optimus sweep itself is pending: section
+6 lists the paper's Optimus values with the "ours" columns left to fill in from
+your run. Nothing from our runs is committed; the tables in section 6 are the
+record, so you can check that your own run lands on the same values.
 
 ## 1. What the paper claims (Section 4.2)
 
@@ -44,15 +48,27 @@ Read this before quoting any number. The simulator keeps the Philly trace's job
   code computes a list it never returns.
 * **Placement preference is never set**, so every job goes through the
   scattered placer. With 1-GPU jobs that is the same as consolidated.
-* **Optimus crashes as shipped** (`AttributeError: optimus_scale_by_gpus`). The
-  table it needs is commented out at `blox/deployment/grpc_client_rm.py:227`.
-  It was active from 2023-10-26 (commit `d9b4516`) until 2024-02-09
-  (`199b4da`), i.e. when the paper's numbers were produced. It is keyed by the
-  *load*, not by GPUs: an Optimus job runs 5x faster at 1 job/hour, 3x at 2,
-  1.4x at 3, 1.2x at 4, 1.1x at 5, 1.0x from 6 up. Section 6 shows the paper's
-  Optimus points are exactly the flat line divided by those factors. Separately,
-  the extra GPUs Optimus assigns go into `job_gpu_demand`, which placement never
-  reads (it reads `num_GPUs`).
+* **Optimus is oracle SRTF plus a per-load speed table, and the table is
+  commented out.** `schedulers/optimus.py` orders jobs by remaining time
+  (iteration time x total iterations - attained service; exact, because the
+  simulator knows every duration). The extra GPUs it then hands out go into
+  `job_gpu_demand`, which placement never reads (it reads `num_GPUs`), and
+  progress does not depend on GPU count anyway. What makes Optimus jobs finish
+  faster is a table at `blox/deployment/grpc_client_rm.py:227-238` that the
+  metrics code multiplies into every job's iterations when the policy is
+  Optimus. It is keyed by the *load*, not by GPUs: 5x at 1 job/hour, 3x at 2,
+  1.4x at 3, 1.2x at 4, 1.1x at 5, 1.0x from 6 up. The service clock used for
+  the ordering is not scaled. Section 6 shows the paper's Optimus points at
+  loads 1 to 5 are the flat line divided by those factors. The table was active
+  from 2023-10-26 (commit `d9b4516`) until 2024-02-09 (`199b4da`), i.e. when
+  the paper's numbers were produced; as shipped today every Optimus run dies in
+  round 2 with `AttributeError: optimus_scale_by_gpus`. **To run Optimus,
+  uncomment those twelve lines** (drop the `# `; the dict entries were indented
+  four spaces deeper than the `self.optimus_scale_by_gpus = {` line, see
+  `git show d9b4516 -- blox/deployment/grpc_client_rm.py`). `run_fig6.sh`
+  refuses to start an Optimus config while the table is commented out. The
+  change is inert for FIFO and Tiresias: the multiplication sits inside an
+  `if os.environ["sched_policy"] == "Optimus"` branch.
 
 Commands to confirm each of these:
 
@@ -60,6 +76,7 @@ Commands to confirm each of these:
 grep -n "exponential=\|multigpu=" simulator_runner/simulator.py
 grep -n "num_GPUs\|job_gpu_demand" placement/placement.py schedulers/optimus.py
 grep -n "optimus_scale_by_gpus\|sched_load" blox/deployment/grpc_client_rm.py schedulers/optimus.py
+grep -n "self.optimus_scale_by_gpus = {" blox/deployment/grpc_client_rm.py   # Optimus needs this line without a leading '#'
 git log --format='%h %ad %s' --date=short -S optimus_scale_by_gpus -- blox/deployment/grpc_client_rm.py
 diff <(sed -n '/sorted_job_order = sorted/,/)/p' schedulers/las.py) <(sed -n '/sorted_job_order = sorted/,/)/p' schedulers/tiresias.py)
 ```
@@ -116,12 +133,14 @@ Two things to know:
   at the repo root (gitignored, 15 MB). The first simulator to start parses the
   39 MB JSON and writes it, which takes a minute. Run the single-config smoke
   test below *before* the 18-way sweep so that only one process creates it.
-* **One code change is required** and is part of this branch:
+* **Two code changes are required.** The first is part of this branch:
   `blox/deployment/grpc_server_rm.py` keeps one gRPC channel to the simulator
   (`_sim_stub`) instead of opening a new one for every RPC. Same RPCs, same
   payloads, byte-identical outputs; but with 18 simulations at ~30 rounds/s the
   original exhausts macOS's 16,384 ephemeral ports in about 40 s and every run
   dies with `Can't assign requested address`. See `git log -p` for the diff.
+  The second is the Optimus speed table of section 2, needed only for the
+  Optimus configs; `run_fig6.sh` checks that it is active before starting one.
 
 ## 5. Run
 
@@ -133,21 +152,29 @@ refuses to reuse one.
 repro_runs/run_fig6.sh smoke Fifo 6 0 20
 .venv/bin/python repro_runs/summarize_fig6.py smoke 0 20
 #    expect: 21 jobs, avg JCT 16.37 h, avg responsiveness 0.131 h
+#    Optimus hookup check: at load 6 the speed factor is 1.0 and nothing queues,
+#    so Optimus must land on exactly the same two numbers.
+repro_runs/run_fig6.sh smoke Optimus 6 0 20
+.venv/bin/python repro_runs/summarize_fig6.py smoke 0 20
 
-# 2. the sweep: FIFO and Tiresias at loads 1-9, jobs 3000-4000, 18 configs in parallel.
-#    ~15 min on a 10-core laptop (longest config, Tiresias 9, ~14 min). Uses ports 50400-50572.
-repro_runs/run_fig6.sh fig6 Fifo,Tiresias 1,2,3,4,5,6,7,8,9
+# 2. the sweep: FIFO, Tiresias and Optimus at loads 1-9, jobs 3000-4000, 27 configs in parallel.
+#    FIFO+Tiresias alone (18 configs) took ~15 min on a 10-core laptop, the longest config
+#    (Tiresias 9) ~14 min. Uses ports 50400-50662.
+repro_runs/run_fig6.sh fig6 Fifo,Tiresias,Optimus 1,2,3,4,5,6,7,8,9
 #    progress: grep -c "Job IDs" repro_runs/fig6/*/scheduler.log   (rounds done per config; totals in the table below)
+#    Already have a finished Fifo,Tiresias sweep under some prefix? Add Optimus to it instead;
+#    the runner refuses to reuse a config directory, not a prefix:
+#    repro_runs/run_fig6.sh <that prefix> Optimus 1,2,3,4,5,6,7,8,9
 
-# 3. the offline reference (section 7), 18 configs one after another, ~30 s in total
-for s in Fifo Tiresias; do for l in 1 2 3 4 5 6 7 8 9; do
+# 3. the offline reference (section 7), 27 configs one after another, under a minute in total
+for s in Fifo Tiresias Optimus; do for l in 1 2 3 4 5 6 7 8 9; do
   .venv/bin/python repro_runs/offline_sched.py --scheduler $s --load $l --out-dir repro_runs/fig6_offline
 done; done
 
 # 4. results
 .venv/bin/python repro_runs/summarize_fig6.py fig6          # table + the paper's ordering checks
 .venv/bin/python repro_runs/compare_fig6_paper.py fig6      # paper vs your run vs offline model, per-job agreement
-.venv/bin/python repro_runs/plot_fig6.py fig6               # -> repro_runs/fig6/fig6_fifo_vs_tiresias.png
+.venv/bin/python repro_runs/plot_fig6.py fig6               # -> repro_runs/fig6/fig6_fig7.png
 ```
 
 Rounds per config (the simulation stops once job 4000 has finished) and wall
@@ -161,7 +188,8 @@ time with all 18 running at once on a 10-core Apple-silicon laptop:
 
 Tiresias at 8 and 9 takes longest: under LAS the tracked jobs finish much
 later, so the simulation runs 2.5x more rounds, and each round sorts a queue
-that has grown to thousands of jobs.
+that has grown to thousands of jobs. Optimus rounds and wall times are not
+recorded yet; the runner prints one summary line per config when it finishes.
 
 `run_fig6.sh <prefix> <scheds> <loads> [start] [end] [base_port]` takes comma
 lists, so a subset such as `Fifo,Tiresias 2,5,8` is fine. Output lands in
@@ -212,7 +240,22 @@ seconds of load-to-load wobble in the flat region, which follows the same
 pattern in both. The authors' bookkeeping stamped completion one round later
 than the current code; the workload and the scheduling are the same.
 
-Optimus in the paper's Figure 6, flat line divided by the Optimus value:
+Optimus, paper values; the "ours" columns are to be filled in from
+`compare_fig6_paper.py` after the Optimus sweep:
+
+| load | paper JCT | ours JCT | paper responsiveness | ours responsiveness |
+|---|---|---|---|---|
+| 1 | 11,660 | | 741 | |
+| 2 | 19,220 | | 736 | |
+| 3 | 40,826 | | 740 | |
+| 4 | 47,575 | | 736 | |
+| 5 | 51,870 | | 735 | |
+| 6 | 57,032 | | 743 | |
+| 7 | 57,078 | | 756 | |
+| 8 | 75,183 | | 8,866 | |
+| 9 | 114,313 | | 34,339 | |
+
+The flat line divided by the paper's Optimus JCT, against the speed table:
 
 | load | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -220,8 +263,9 @@ Optimus in the paper's Figure 6, flat line divided by the Optimus value:
 | table at `grpc_client_rm.py:227` | 5 | 3 | 1.4 | 1.2 | 1.1 | 1.0 | 1.0 | 1.0 | 1.0 |
 
 Loads 1 to 5 are the table. Loads 8 and 9 are the shortest-remaining-time
-effect, which the shipped Optimus (oracle SRTF ordering) would still produce
-if the table were restored.
+ordering, where the table is 1.0. When comparing, keep in mind that the paper's
+loads 1 and 2 points sit near the bottom of its axis, where the PDF extraction
+is least precise (about 0.05% of a roughly 90 h axis, i.e. 150 to 200 s).
 
 ## 7. The two checks behind the numbers
 
@@ -229,8 +273,10 @@ if the table were restored.
 stream through the shipped `SimulatorRunner` (same seed, same `GetJobs` calls at
 t = 0, 300, 600, ...), then applies the scheduler's round rules directly in
 ~100 lines, with no gRPC and none of Blox's scheduling code: top-of-round
-progress and exits, arrivals, sort by `(priority, submit_time)` for FIFO or
-`(priority, attained_service)` for Tiresias, and the fact that with 1-GPU jobs
+progress and exits, arrivals, sort by `(priority, submit_time)` for FIFO,
+`(priority, attained_service)` for Tiresias or `(priority, remaining time)` for
+Optimus (whose progress is multiplied by the per-load table), and the fact that
+with 1-GPU jobs
 Blox's placement loop plus its preemption scan is exactly "the first 128 jobs
 in sort order run". The docstring lists every rule and where it was read from.
 
@@ -240,10 +286,10 @@ in sort order run". The docstring lists every rule and where it was read from.
 ```
 
 It matched the Blox output on every tracked job's JCT and responsiveness in all
-18 configs (the third table of `compare_fig6_paper.py`), including Tiresias at
-load 9 with 234,000 preemptions. `--out-dir` writes its results in Blox's
-file format; the loop in section 5 writes all 18 configs to `fig6_offline/`
-(not committed, ~30 s in total), and `compare_fig6_paper.py`
+18 FIFO and Tiresias configs (the third table of `compare_fig6_paper.py`),
+including Tiresias at load 9 with 234,000 preemptions; Optimus is pending. `--out-dir` writes its results in Blox's
+file format; the loop in section 5 writes all 27 configs to `fig6_offline/`
+(not committed, under a minute in total), and `compare_fig6_paper.py`
 reads them from there. Its stdout also gives the preemption count per config.
 
 **Paper points** (`extract_paper_points.py`). Figures 6 and 7 are vector

@@ -1,5 +1,5 @@
 """
-Offline re-simulation of a Blox FIFO or Tiresias run, to cross-check a Blox
+Offline re-simulation of a Blox FIFO, Tiresias or Optimus run, to cross-check a Blox
 output directory job by job without gRPC.
 
 It reuses the shipped simulator class to generate the identical job stream
@@ -8,13 +8,18 @@ scheduler's round semantics as read from blox_new_flow_multi_run.py,
 blox_manager.py, placement.py and grpc_client_rm.py:
 
   top of round T : every running job gains one round of service and
-                   round/iter_time iterations; it exits when iterations reach
-                   job_total_iteration, finish time = T. The first such call
-                   after a launch records responsiveness = T - arrival.
-                   Stop when every tracked id has finished.
+                   round/iter_time iterations (Optimus: times the per-load
+                   factor of grpc_client_rm.py:227, 5, 3, 1.4, 1.2, 1.1 at
+                   loads 1-5 and 1.0 above; the service clock is not scaled);
+                   it exits when iterations reach job_total_iteration, finish
+                   time = T. The first such call after a launch records
+                   responsiveness = T - arrival. Stop when every tracked id
+                   has finished.
   arrivals       : jobs with arrival <= T, ids in arrival order.
   order          : Fifo  -> (job_priority, submit_time)
                    Tiresias (= single-queue LAS) -> (job_priority, attained_service)
+                   Optimus (oracle SRTF, schedulers/optimus.py) ->
+                     (job_priority, iter_time * job_total_iteration - attained_service)
                    ties keep id order (stable sort over an insertion-ordered dict).
   placement      : with 1-GPU jobs the placement loop plus its preemption scan
                    is exactly "the first <gpus> jobs in order run"; everything
@@ -23,7 +28,7 @@ blox_manager.py, placement.py and grpc_client_rm.py:
                    round accumulates time_since_scheduled; at >= priority
                    threshold (3,600,000 s) its job_priority drops from 999 to 1.
 
-usage: offline_sched.py --scheduler Fifo|Tiresias --load L [--start 3000 --end 4000]
+usage: offline_sched.py --scheduler Fifo|Tiresias|Optimus --load L [--start 3000 --end 4000]
                         [--compare-dir repro_runs/<prefix>/<Sched>_load_<L>]
 """
 import argparse
@@ -49,7 +54,7 @@ import simulator_acceptance_policy as sim  # noqa: E402
 from blox.deployment.grpc_stubs import rm_pb2  # noqa: E402
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--scheduler", choices=["Fifo", "Tiresias"], required=True)
+ap.add_argument("--scheduler", choices=["Fifo", "Tiresias", "Optimus"], required=True)
 ap.add_argument("--load", type=float, required=True)
 ap.add_argument("--start", type=int, default=3000)
 ap.add_argument("--end", type=int, default=4000)
@@ -59,6 +64,13 @@ ap.add_argument("--priority-thresh", type=int, default=3600 * 1000)
 ap.add_argument("--compare-dir")
 ap.add_argument("--out-dir", help="write <Sched>_load_<L>_{job_stats,responsivness}.json in Blox's format")
 args = ap.parse_args()
+
+# Optimus speed table, copied from blox/deployment/grpc_client_rm.py:227-238
+# and keyed by str(load) exactly as the Blox run keys it (so a load outside
+# 1..9 fails here the same way it fails there).
+_t = [5, 3, 1.4, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
+OPTIMUS_SCALE = {f"{i + 1}.0": _t[i] for i in range(9)}
+scale = OPTIMUS_SCALE[str(args.load)] if args.scheduler == "Optimus" else None
 
 runner = sim.SimulatorRunner(
     TRACE, [args.load], (args.start, args.end), [args.scheduler], ["Place"], ["AcceptAll"]
@@ -93,7 +105,10 @@ while True:
             j["launched_once"] = True
             if jid in tracked:
                 resp[jid] = (j["submit"], T)
-        j["executed"] += args.round / j["iter_time"]
+        if scale is None:
+            j["executed"] += args.round / j["iter_time"]
+        else:  # grpc_client_rm.py:260-266, same operand order for bit-equality
+            j["executed"] = (args.round / j["iter_time"]) * scale + j["executed"]
         j["attained"] += args.round
         if j["executed"] >= j["total_iter"]:
             exits.append(jid)
@@ -121,6 +136,14 @@ while True:
 
     if args.scheduler == "Fifo":
         order = sorted(active, key=lambda k: (active[k]["priority"], active[k]["submit"]))
+    elif args.scheduler == "Optimus":
+        order = sorted(
+            active,
+            key=lambda k: (
+                active[k]["priority"],
+                active[k]["iter_time"] * active[k]["total_iter"] - active[k]["attained"],
+            ),
+        )
     else:
         order = sorted(active, key=lambda k: (active[k]["priority"], active[k]["attained"]))
     new_running = set(order[: args.gpus])
@@ -142,7 +165,9 @@ while True:
 jcts = {k: v[1] - v[0] for k, v in jct.items()}
 resps = {k: v[1] - v[0] for k, v in resp.items()}
 print(
-    f"offline {args.scheduler} load {args.load:g}, jobs {args.start}-{args.end}: "
+    f"offline {args.scheduler} load {args.load:g}"
+    + (f" (speed factor {scale:g})" if scale is not None else "")
+    + f", jobs {args.start}-{args.end}: "
     f"{rounds} rounds, {next_id} jobs generated, {preemptions} preemptions, "
     f"avg JCT {statistics.mean(jcts.values())/3600:.3f} h, "
     f"avg responsiveness {statistics.mean(resps.values())/3600:.4f} h"

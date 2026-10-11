@@ -1,5 +1,5 @@
 """
-Three-way comparison for Fig 6 / Fig 7 (FIFO vs Tiresias on the Philly trace):
+Three-way comparison for Fig 6 / Fig 7 (FIFO, Tiresias and Optimus on the Philly trace):
 
   paper   : data points read from the vector markers of Figs 6 and 7 in the
             EuroSys '24 PDF (repro_runs/paper_fig6_fig7_points.json, committed;
@@ -11,8 +11,8 @@ Three-way comparison for Fig 6 / Fig 7 (FIFO vs Tiresias on the Philly trace):
             independent re-simulation of the same job stream under the
             scheduler's round semantics (not committed; '-' where missing)
 
-The last column is paper minus ours, "ours" being blox where it exists and
-offline otherwise.
+The "p-ours" column of each block is paper minus ours, "ours" being blox where
+it exists and offline otherwise.
 
 usage: compare_fig6_paper.py [exp_prefix=fig6] [start=3000] [end=4000]
 """
@@ -27,7 +27,7 @@ START = int(sys.argv[2]) if len(sys.argv) > 2 else 3000
 END = int(sys.argv[3]) if len(sys.argv) > 3 else 4000
 OFF = os.path.join(HERE, "fig6_offline")
 LOADS = range(1, 10)
-SCHEDS = ["Tiresias", "Fifo"]
+SCHEDS = ["Tiresias", "Fifo", "Optimus"]
 KINDS = {"job_stats": "avg JCT", "responsivness": "avg responsiveness"}
 FIG = {"job_stats": "Fig6 JCT", "responsivness": "Fig7 Resp"}
 
@@ -63,15 +63,21 @@ for fig, series in raw.items():
         }
 
 
-def fmt(v):
-    return f"{v:>9,.0f}" if v is not None else f"{'-':>9}"
+W = 8  # column width; the widest value, 323,469, is 7 characters
+
+
+def fmt(v, w=W):
+    return f"{v:>{w},.0f}" if v is not None else f"{'-':>{w}}"
 
 
 for kind, label in KINDS.items():
     print(f"\n{label} in seconds, jobs {START}-{END}, 128 GPUs, Accept All")
+    top = f"{'':>4}"
     hdr = f"{'load':>4}"
     for s in SCHEDS:
-        hdr += f" | {s + ' paper':>14}{'blox':>10}{'offline':>10}{'paper-ours':>10}"
+        top += f" | {s:^{4 * W}}"
+        hdr += f" | {'paper':>{W}}{'blox':>{W}}{'offline':>{W}}{'p-ours':>{W}}"
+    print(top)
     print(hdr)
     print("-" * len(hdr))
     for lo in LOADS:
@@ -84,7 +90,7 @@ for kind, label in KINDS.items():
             om = statistics.mean(o.values()) if o else None
             ours = bm if bm is not None else om
             d = p - ours if (p is not None and ours is not None) else None
-            row += f" | {fmt(p):>14}{fmt(bm)}{fmt(om)}{fmt(d)}"
+            row += f" | {fmt(p)}{fmt(bm)}{fmt(om)}{fmt(d)}"
         print(row)
 
 print("\nBlox output vs offline model, per job (tracked jobs only)")
@@ -103,11 +109,20 @@ for s in SCHEDS:
         rs = sum(1 for k in br if k in orr and br[k] == orr[k])
         print(f"{s + '_load_' + str(lo):<18}{len(bj):>10}{js:>10}{len(bj) - js:>10}{rs:>11}{len(br) - rs:>10}")
 
-print("\nOptimus in the paper's Fig 6: flat-line JCT divided by Optimus JCT, per load,")
-print("against the per-load table commented out at grpc_client_rm.py:227")
+print("\nTiresias / Optimus avg JCT ratio per load, paper and ours, against the per-load")
+print("speed table at grpc_client_rm.py:227 (loads 1-5 are the table; 8 and 9 are the SRTF ordering)")
 table = [5, 3, 1.4, 1.2, 1.1, 1.0, 1.0, 1.0, 1.0]
 po, pt = paper[("Fig6 JCT", "Optimus")], paper[("Fig6 JCT", "Tiresias")]
-print(f"{'load':>4}{'Tiresias':>10}{'Optimus':>10}{'ratio':>8}{'table':>7}")
+
+
+def ours_mean(s, lo):
+    d = blox(s, lo, "job_stats") or offline(s, lo, "job_stats")
+    return statistics.mean(d.values()) if d else None
+
+
+print(f"{'load':>4}{'table':>7}{'paper T/O':>11}{'ours T/O':>10}{'ours Tiresias':>15}{'ours Optimus':>14}")
 for lo in LOADS:
-    if lo in po and lo in pt:
-        print(f"{lo:>4}{pt[lo]:>10,.0f}{po[lo]:>10,.0f}{pt[lo] / po[lo]:>8.2f}{table[lo - 1]:>7}")
+    pr = f"{pt[lo] / po[lo]:.2f}" if lo in po and lo in pt else "-"
+    t, o = ours_mean("Tiresias", lo), ours_mean("Optimus", lo)
+    orat = f"{t / o:.2f}" if t and o else "-"
+    print(f"{lo:>4}{table[lo - 1]:>7}{pr:>11}{orat:>10}{fmt(t, 15)}{fmt(o, 14)}")

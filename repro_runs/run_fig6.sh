@@ -40,11 +40,27 @@ for s in "${SCHEDS[@]}"; do
   case $s in Fifo|Tiresias|Optimus) ;; *) echo "unknown scheduler '$s' (Fifo, Tiresias, Optimus)"; exit 1;; esac
 done
 
-# Completion is detected by an output file appearing, so a previous run's
-# files under the same prefix would make every config look done instantly.
-if [ -e "$OUT" ]; then
-  echo "$OUT already exists; use a new prefix or delete it first"; exit 1
-fi
+# Completion is detected by an output file appearing in the config's own
+# directory, so a config directory left by an earlier run would look done
+# instantly: refuse to reuse one. Other configs under the same prefix are fine,
+# e.g. adding Optimus next to an earlier Fifo,Tiresias sweep of the same prefix.
+for s in "${SCHEDS[@]}"; do
+  for l in "${LOADS[@]}"; do
+    if [ -e "$OUT/${s}_load_${l}" ]; then
+      echo "$OUT/${s}_load_${l} already exists; use a new prefix or delete it first"; exit 1
+    fi
+  done
+done
+
+# Optimus multiplies job progress by a per-load speed table in
+# blox/deployment/grpc_client_rm.py that upstream commented out (199b4da);
+# without it every Optimus run dies in round 2 with
+# "AttributeError: optimus_scale_by_gpus". See README section 2.
+for s in "${SCHEDS[@]}"; do
+  if [ "$s" = Optimus ] && ! grep -q '^[[:space:]]*self\.optimus_scale_by_gpus = {' "$REPO/blox/deployment/grpc_client_rm.py"; then
+    echo "Optimus: the speed table in blox/deployment/grpc_client_rm.py (around line 227) is still commented out; see repro_runs/README.md section 2"; exit 1
+  fi
+done
 
 # One (sim, rm, nm) port triple per config. Refuse to start if any is taken:
 # gRPC sets SO_REUSEPORT, so a stale process on the same port silently steals
@@ -96,7 +112,7 @@ run_one() {
 
   # Done when BloxManager writes custom_metrics.json, the last of its five
   # output files (blox_manager.py update_metrics). Also stop if the scheduler
-  # process dies (e.g. Optimus AttributeError).
+  # process dies (the traceback is in scheduler.err).
   local done_file="$dir/${PREFIX}_${START}_${END}_${sched}_AcceptAll_load_${load}.0_custom_metrics.json"
   while kill -0 $sched_pid 2>/dev/null && [ ! -f "$done_file" ]; do
     sleep 15

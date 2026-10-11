@@ -1,10 +1,10 @@
 """
-Plot Fig 6 (avg JCT) and Fig 7 (avg responsiveness) for FIFO vs Tiresias:
-the paper's points, read from the PDF's vector markers, over our curves from
-the shipped code (Blox output of run_fig6.sh where finished, offline model
-otherwise).
+Plot Fig 6 (avg JCT) and Fig 7 (avg responsiveness) for FIFO, Tiresias and
+Optimus: the paper's points, read from the PDF's vector markers, over our
+curves (Blox output of run_fig6.sh where finished, offline model otherwise;
+a scheduler with neither is left out of the "this repo" lines).
 
-usage: plot_fig6.py [exp_prefix=fig6] [out=repro_runs/<exp_prefix>/fig6_fifo_vs_tiresias.png]
+usage: plot_fig6.py [exp_prefix=fig6] [out=repro_runs/<exp_prefix>/fig6_fig7.png]
 """
 import json
 import os
@@ -18,14 +18,15 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PREFIX = sys.argv[1] if len(sys.argv) > 1 else "fig6"
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, PREFIX, "fig6_fifo_vs_tiresias.png")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, PREFIX, "fig6_fig7.png")
 OFF = os.path.join(HERE, "fig6_offline")
 START, END = 3000, 4000
 LOADS = list(range(1, 10))
 
-# colour follows the scheduler (categorical slots 1 and 2 of the reference
+# colour follows the scheduler (categorical slots 1 to 3 of the reference
 # palette, validated for the light surface); line style follows the source.
-COLOR = {"Tiresias": "#2a78d6", "Fifo": "#eb6834"}
+COLOR = {"Tiresias": "#2a78d6", "Fifo": "#eb6834", "Optimus": "#1baf7a"}
+NAME = {"Tiresias": "LAS (Tiresias)", "Fifo": "FIFO", "Optimus": "Optimus"}
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e1"
 FIG = {"job_stats": "Fig6 JCT", "responsivness": "Fig7 Resp"}
 TITLE = {"job_stats": "Average JCT", "responsivness": "Average responsiveness"}
@@ -62,15 +63,18 @@ fig, axes = plt.subplots(1, 2, figsize=(11, 4), facecolor=SURFACE)
 offline_used = False
 for ax, kind in zip(axes, FIG):
     ax.set_facecolor(SURFACE)
-    for s in ("Tiresias", "Fifo"):
-        ys, srcs = zip(*(ours(s, lo, kind) for lo in LOADS))
-        offline_used |= "offline" in srcs
-        name = "LAS (Tiresias)" if s == "Tiresias" else "FIFO"
-        ax.plot(LOADS, [y / 3600 for y in ys], color=COLOR[s], lw=2, marker="o", ms=6,
-                label=f"{name}, this repo")
+    for s in COLOR:
+        have = [(lo, y, src) for lo in LOADS for y, src in [ours(s, lo, kind)] if y is not None]
+        if have:
+            offline_used |= any(src == "offline" for _, _, src in have)
+            ax.plot([lo for lo, _, _ in have], [y / 3600 for _, y, _ in have], color=COLOR[s],
+                    lw=2, marker="o", ms=6, label=f"{NAME[s]}, this repo")
+        else:
+            print(f"  no data for {s} ({kind}): neither {PREFIX}/ nor fig6_offline/ has it")
         px = sorted(paper[(FIG[kind], s)])
         ax.plot(px, [paper[(FIG[kind], s)][x] / 3600 for x in px], color=COLOR[s], lw=0,
-                marker="o", ms=11, mfc="none", mew=1.6, label=f"{name}, paper Fig {6 if kind == 'job_stats' else 7}")
+                marker="o", ms=11, mfc="none", mew=1.6,
+                label=f"{NAME[s]}, paper Fig {6 if kind == 'job_stats' else 7}")
     ax.set_title(f"{TITLE[kind]}, Philly trace, 128 GPUs", loc="left", color=INK)
     ax.set_xlabel("jobs per hour")
     ax.set_ylabel("hours")
