@@ -13,3 +13,7 @@ graveyard/
 
 *.err
 *.log
+
+# outputs of repro_runs/run_fig6.sh (one dir per run prefix) and of
+# repro_runs/offline_sched.py --out-dir; regenerate them, see repro_runs/README.md
+repro_runs/*/
