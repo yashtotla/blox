@@ -1,0 +1,15 @@
+{
+  // Cursor's Pyright default ("off", which still warns on the three rules
+  // below). Spelled out so the basedpyright CLI reports the same thing.
+  "typeCheckingMode": "off",
+  "reportMissingImports": "warning",
+  "reportMissingModuleSource": "warning",
+  "reportUndefinedVariable": "warning",
+  "venvPath": ".",
+  "venv": ".venv",
+  // Mirror the sys.path.append() calls the scripts do at runtime, so that
+  // `import rm_pb2` etc. resolve statically.
+  "extraPaths": ["blox/deployment/grpc_stubs", "simulator_runner"],
+  // Vendored Synergy training code (torch/apex/DALI aren't installed).
+  "ignore": ["workload_synergy"]
+}

@@ -53,10 +53,14 @@ def main(args):
             if args.acceptance_policy == "AcceptAll":
                 admission_policy = admission_control.acceptAll(args)
 
+            elif args.acceptance_policy == "LoadBasedAccept-1.0x":
+                admission_policy = admission_control.loadBasedAccept(args, 1.0)
             elif args.acceptance_policy == "LoadBasedAccept-1.2x":
                 admission_policy = admission_control.loadBasedAccept(args, 1.2)
             elif args.acceptance_policy == "LoadBasedAccept-1.4x":
                 admission_policy = admission_control.loadBasedAccept(args, 1.4)
+            elif args.acceptance_policy == "LoadBasedAccept-1.5x":
+                admission_policy = admission_control.loadBasedAccept(args, 1.5)
             else:
                 raise NotImplemented(f"{args.acceptance_policy} not Implemented")
 
