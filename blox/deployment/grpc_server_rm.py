@@ -113,11 +113,25 @@ class RMServer(rm_pb2_grpc.RMServerServicer):
         """
         dummy_val = rm_pb2.IntVal()
         dummy_val.value = 10
-        with grpc.insecure_channel(f"localhost:{self.simulator_rpc_port}") as channel:
-            stub = sim_pb2_grpc.SimServerStub(channel)
-            response = stub.GetConfig(dummy_val)
+        response = self._sim_stub().GetConfig(dummy_val)
         new_config = json.loads(response.response)
         return new_config
+
+    def _sim_stub(self):
+        """
+        One channel to the simulator for the life of this server.
+
+        Opening a channel per RPC (the original `with grpc.insecure_channel`)
+        leaves one TIME_WAIT socket per round. With 18 simulations in parallel
+        at ~30 rounds/s that exhausts macOS's 16k ephemeral ports in ~40 s and
+        every GetJobs fails with "Can't assign requested address".
+        """
+        if getattr(self, "_sim_channel", None) is None:
+            options = [("grpc.max_receive_message_length", 10 * 1024 * 1024)]
+            self._sim_channel = grpc.insecure_channel(
+                f"127.0.0.1:{self.simulator_rpc_port}", options=options
+            )
+        return sim_pb2_grpc.SimServerStub(self._sim_channel)
 
     def get_jobs_sim(
         self,
@@ -128,14 +142,8 @@ class RMServer(rm_pb2_grpc.RMServerServicer):
         """
         sim_time = rm_pb2.IntVal()
         sim_time.value = simulator_time
-        # the training starts with
-        options = [("grpc.max_receive_message_length", 10 * 1024 * 1024)]
         # print("Called rpc server")
-        with grpc.insecure_channel(
-            f"127.0.0.1:{self.simulator_rpc_port}", options=options
-        ) as channel:
-            stub = sim_pb2_grpc.SimServerStub(channel)
-            response = stub.GetJobs(sim_time)
+        response = self._sim_stub().GetJobs(sim_time)
         # print("Rpc server return")
         jobs_to_run = json.loads(response.response)
         job_list = list(jobs_to_run.values())
