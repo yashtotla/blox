@@ -2,7 +2,6 @@ import os
 import time
 import warnings
 import sys
-import copy
 import argparse
 
 warnings.simplefilter(action="ignore", category=FutureWarning)

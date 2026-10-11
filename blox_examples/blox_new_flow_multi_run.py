@@ -46,7 +46,7 @@ def main(args):
             if args.placement_name == "Place":
                 placement_policy = placement.JobPlacement(args)
             else:
-                raise NotImplemented(
+                raise NotImplementedError(
                     f"Placement Policy {args.placement_policy} not Implemented"
                 )
 
@@ -62,7 +62,7 @@ def main(args):
             elif args.acceptance_policy == "LoadBasedAccept-1.5x":
                 admission_policy = admission_control.loadBasedAccept(args, 1.5)
             else:
-                raise NotImplemented(f"{args.acceptance_policy} not Implemented")
+                raise NotImplementedError(f"{args.acceptance_policy} not Implemented")
 
             if args.scheduler_name == "Las":
                 scheduling_policy = schedulers.Las(args)
@@ -79,7 +79,7 @@ def main(args):
                 scheduling_policy = schedulers.Tiresias(args)
 
             else:
-                raise NotImplemented(f"{args.scheduler_name} not Implemented")
+                raise NotImplementedError(f"{args.scheduler_name} not Implemented")
 
             simulator_time = 0
 

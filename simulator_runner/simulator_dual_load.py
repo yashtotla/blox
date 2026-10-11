@@ -2,17 +2,14 @@ import os
 import sys
 import json
 import grpc
-import copy
 import argparse
 import numpy as np
 
 from workload import Workload
 from concurrent import futures
-from typing import Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.lines as lines
 from collections import defaultdict
 
 # something in pylab * screws up with random library, for now just overwriting
@@ -21,7 +18,6 @@ import random
 sys.path.append(os.path.join(os.path.dirname(__file__), "./deployment/grpc_stubs"))
 from blox.deployment.grpc_stubs import rm_pb2
 from blox.deployment.grpc_stubs import rm_pb2_grpc
-from blox.deployment.grpc_stubs import simulator_pb2
 from blox.deployment.grpc_stubs import simulator_pb2_grpc
 
 
@@ -336,7 +332,7 @@ class SimulatorRunner(simulator_pb2_grpc.SimServerServicer):
                 fig, ax1 = plt.subplots(1, 1)
                 fig.set_size_inches(10, 3)
                 ax1.set_title(f"{scheduler}_load_{load}_free_GPUs")
-                ax1.plot(data_job.keys(), free_gpu)
+                ax1.plot(data_job.keys(), free_gpus)
                 plt.savefig(
                     os.path.join(write_folder, f"{scheduler}_load_{load}_free_gpu.pdf"),
                     format="pdf",

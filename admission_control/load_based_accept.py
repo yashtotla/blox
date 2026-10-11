@@ -1,4 +1,3 @@
-import queue
 from .admission_policy import AdmissionControl
 
 

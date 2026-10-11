@@ -10,6 +10,7 @@
   // Mirror the sys.path.append() calls the scripts do at runtime, so that
   // `import rm_pb2` etc. resolve statically.
   "extraPaths": ["blox/deployment/grpc_stubs", "simulator_runner"],
-  // Vendored Synergy training code (torch/apex/DALI aren't installed).
-  "ignore": ["workload_synergy"]
+  // Vendored Synergy training code (torch/apex/DALI aren't installed), and
+  // dead code moved to graveyard/.
+  "ignore": ["workload_synergy", "graveyard"]
 }

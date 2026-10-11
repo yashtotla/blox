@@ -1,12 +1,10 @@
 import os
 import sys
-import json
 import grpc
 import numa
 import logging
 import subprocess
 import re
-from concurrent import futures
 
 from typing import Optional
 
@@ -29,7 +27,7 @@ class NodeManagerComm(object):
         """
         self.ipaddr = f"{ipaddr}:{central_scheduler_port}"
         self.ip_extract = re.compile(".?inet ([0-9.]+)")
-        self.memory_extract = re.compile(".?MemAvailable:\s+([0-9]+)")
+        self.memory_extract = re.compile(r".?MemAvailable:\s+([0-9]+)")
 
     def register_with_scheduler(
         self, interface: Optional[str] = None, nmipaddr: Optional[str] = None

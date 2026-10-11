@@ -2,19 +2,14 @@ import os
 import sys
 import json
 import grpc
-import logging
 from typing import List
-from concurrent import futures
 from collections import defaultdict
 
 sys.path.append(os.path.join((__file__), "./grpc_stubs"))
-import nm_pb2
 import nm_pb2_grpc
 
 import rm_pb2
 
-import simulator_pb2
-import simulator_pb2_grpc
 
 
 class ResourceManagerComm(object):
@@ -191,7 +186,7 @@ class ResourceManagerComm(object):
             if not if_sim:
                 # added tracking
                 previous_metric = active_job_dict[job_id]["tracked_metrics"]
-                metric_data_dict[job_id] = previous_metrics
+                metric_data_dict[job_id] = previous_metric
                 for ipaddr in ipaddr_to_query:
                     ipaddr = f"{ipaddr}:{self.rpc_port}"
                     metric_request = rm_pb2.JsonResponse()

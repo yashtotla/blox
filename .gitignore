@@ -5,7 +5,11 @@ __pycache__/
 *.swo
 
 *pb2*.py
+*pb2*.pyi
 
 *.pickle
 
+graveyard/
 
+*.err
+*.log

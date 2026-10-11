@@ -2,9 +2,7 @@ import os
 import sys
 import pickle
 import math
-import logging
 import numpy as np
-import pandas as pd
 
 
 sys.path.append(os.path.dirname(__file__))
@@ -12,8 +10,6 @@ print(sys.path)
 import parse_philly_jobs
 from utils import (
     poisson_next_arrival_time,
-    get_total_iteration,
-    get_total_iteration_exp,
     get_job_gpu_demand,
     get_gavel_like_iter,
 )

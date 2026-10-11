@@ -1,0 +1,21 @@
+# ty (Astral's type checker; Cursor runs it via the astral-sh.ty extension).
+# Same import setup as pyrightconfig.json.
+
+[environment]
+python = ".venv"
+# Mirror the sys.path.append() calls the scripts do at runtime, so that
+# `import rm_pb2` etc. resolve statically.
+extra-paths = ["blox/deployment/grpc_stubs", "simulator_runner"]
+
+[src]
+# Vendored Synergy training code (torch/apex/DALI aren't installed), and
+# dead code moved to graveyard/.
+exclude = ["workload_synergy", "graveyard"]
+
+# `exclude` only affects whole-project checks; files opened in the editor are
+# still checked, so also switch every rule off there.
+[[overrides]]
+include = ["workload_synergy/**", "graveyard/**"]
+
+[overrides.rules]
+all = "ignore"

@@ -1,6 +1,4 @@
-import os
 from enum import Enum
-import random
 
 class TaskName(Enum):
     IMAGE=1

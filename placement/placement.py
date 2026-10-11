@@ -134,12 +134,12 @@ class JobPlacement(object):
                 if found:
                     launched_job_ids.append(job_id)
                     job_to_launch[job_id] = placement
-                    active_jobs[jid]["running_accel"] = gpu_preference
+                    active_jobs[job_id]["running_accel"] = gpu_preference
                     mark_gpu_in_use(gpu_df, placement, job_id)
                 else:
                     break
 
-            return (jobs_to_terminate, jobs_to_launch)
+            return (jobs_to_terminate, job_to_launch)
 
             # accel_sorted_by_pref - key: gpu_type, val: list of job ids sorted
             # by decreasing preference
@@ -239,7 +239,7 @@ class JobPlacement(object):
                 # found a node with more GPUs then needed
                 if min_more_GPUs > len(free_gpus[node]):
                     min_more_GPUs = len(free_gpus[node])
-                    node_with_min_moRE_gpUs = node
+                    node_with_min_more_GPUs = node
         if node_with_min_more_GPUs is not None:
             # only extracting the GPUs we need
             return (free_gpus[node_with_min_more_GPUs][:numGPUs_needed], True)
